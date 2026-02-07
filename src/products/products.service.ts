@@ -1,49 +1,56 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
 
-  private products: Product[] = [];
-  private nextId = 1;
+  constructor(private prisma: PrismaService) {}
 
-  create(dto: CreateProductDto): Product {
-
-    const newProduct: Product = {
-      id: this.nextId++,
-      name: dto.name,
-      price: dto.price,
-      stock: dto.stock,
-      description: dto.description,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.products.push(newProduct);
-    return newProduct;
+  async create(dto: CreateProductDto) {
+    return this.prisma.product.create({
+      data: {
+        name: dto.name,
+        price: dto.price,
+        stock: dto.stock,
+        description: dto.description,
+      },
+    });
   }
 
-  findAll(): Product[] {
-    return this.products;
+  async findAll() {
+    return this.prisma.product.findMany({
+      orderBy: { id: 'asc' },
+    });
   }
 
-  findOne(id: number): Product {
-    const found = this.products.find(p => p.id === id);
-    if (!found) throw new NotFoundException(`Product ${id} no existe`);
-    return found;
-  }
+  async findOne(id: number) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+    });
 
-  update(id: number, dto: UpdateProductDto): Product {
-    const product = this.findOne(id);
-    Object.assign(product, dto);
+    if (!product) {
+      throw new NotFoundException(`Product ${id} no existe`);
+    }
+
     return product;
   }
 
-  remove(id: number): void {
-    const idx = this.products.findIndex(p => p.id === id);
-    if (idx === -1) throw new NotFoundException(`Product ${id} no existe`);
-    this.products.splice(idx, 1);
+  async update(id: number, dto: UpdateProductDto) {
+    await this.findOne(id);
+
+    return this.prisma.product.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async remove(id: number) {
+    await this.findOne(id);
+
+    return this.prisma.product.delete({
+      where: { id },
+    });
   }
 }

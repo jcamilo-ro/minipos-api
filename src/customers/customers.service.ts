@@ -1,48 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateCustomerDto } from './dto/create-customer.dto';
-import { UpdateCustomerDto } from './dto/update-customer.dto';
-import { Customer } from './entities/customer.entity';
+import { Injectable, NotFoundException } from '@nestjs/common'
+import { PrismaService } from '../prisma/prisma.service'
+import { CreateCustomerDto } from './dto/create-customer.dto'
+import { UpdateCustomerDto } from './dto/update-customer.dto'
 
 @Injectable()
 export class CustomersService {
+  constructor(private readonly prisma: PrismaService) {}
 
-  private customers: Customer[] = [];
-  private nextId = 1;
-
-  create(dto: CreateCustomerDto): Customer {
-
-    const newCustomer: Customer = {
-      id: this.nextId++,
-      fullName: dto.fullName,
-      email: dto.email,
-      phone: dto.phone,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.customers.push(newCustomer);
-    return newCustomer;
+  async create(dto: CreateCustomerDto) {
+    return this.prisma.customer.create({
+      data: {
+        fullName: dto.fullName,
+        email: dto.email,
+        phone: dto.phone,
+      },
+    })
   }
 
-  findAll(): Customer[] {
-    return this.customers;
+  async findAll() {
+    return this.prisma.customer.findMany({
+      orderBy: { id: 'asc' },
+    })
   }
 
-  findOne(id: number): Customer {
-    const found = this.customers.find(c => c.id === id);
-    if (!found) throw new NotFoundException(`Customer ${id} no existe`);
-    return found;
+  async findOne(id: number) {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+    })
+
+    if (!customer) {
+      throw new NotFoundException(`Customer ${id} no existe`)
+    }
+
+    return customer
   }
 
-  update(id: number, dto: UpdateCustomerDto): Customer {
-    const customer = this.findOne(id);
-    Object.assign(customer, dto);
-    return customer;
+  async update(id: number, dto: UpdateCustomerDto) {
+    await this.findOne(id)
+
+    return this.prisma.customer.update({
+      where: { id },
+      data: dto,
+    })
   }
 
-  remove(id: number): void {
-    const idx = this.customers.findIndex(c => c.id === id);
-    if (idx === -1) throw new NotFoundException(`Customer ${id} no existe`);
-    this.customers.splice(idx, 1);
+  async remove(id: number) {
+    await this.findOne(id)
+
+    await this.prisma.customer.delete({
+      where: { id },
+    })
   }
 }
