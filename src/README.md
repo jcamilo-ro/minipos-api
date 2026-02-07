@@ -29,3 +29,13 @@ POST /customers
 
 ### Products
 POST /products
+
+## Backend - Clase Prisma
+
+- Conexión a PostgreSQL con Prisma
+- CRUD persistente en Customers
+- CRUD persistente en Products
+- Validación de existencia con NotFoundException
+- Pruebas realizadas en Postman
+
+Servidor probado reiniciando y confirmando persistencia de datos.
