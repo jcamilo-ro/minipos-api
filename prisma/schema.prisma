@@ -27,3 +27,65 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+model Student {
+  id        Int      @id @default(autoincrement())
+  fullName  String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  profile     StudentProfile?
+  enrollments Enrollment[]
+}
+
+model StudentProfile {
+  id        Int    @id @default(autoincrement())
+  studentId Int    @unique
+  phone     String?
+  address   String?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Department {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  courses Course[]
+}
+
+model Course {
+  id           Int    @id @default(autoincrement())
+  code         String @unique
+  title        String
+  departmentId Int
+
+  department  Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  tags        Tag[]
+  enrollments Enrollment[]
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  courses Course[]
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
+  COMPLETED
+}
+
+model Enrollment {
+  id         Int              @id @default(autoincrement())
+  studentId  Int
+  courseId   Int
+  status     EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime         @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, courseId])
+  @@index([courseId])
+}
